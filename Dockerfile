@@ -1,9 +1,9 @@
-FROM python:3.7-stretch
+FROM cytomine/software-python3-base:v2.2.0
 
 # -----------------------------------------------------------------------------
 # Install Stardist and tensorflow
-RUN pip install tensorflow==1.15
-RUN pip install stardist==0.5.0
+RUN pip install tensorflow==2.2.0
+RUN pip install stardist==0.6.0
 RUN mkdir -p /models && \
     cd /models && \
     mkdir -p 2D_versatile_HE
@@ -13,14 +13,6 @@ ADD weights_best.h5 /models/2D_versatile_HE/weights_best.h5
 RUN chmod 444 /models/2D_versatile_HE/config.json
 RUN chmod 444 /models/2D_versatile_HE/thresholds.json
 RUN chmod 444 /models/2D_versatile_HE/weights_best.h5
-
-
-# -----------------------------------------------------------------------------
-# Install Cytomine python client
-RUN git clone https://github.com/cytomine-uliege/Cytomine-python-client.git && \
-    cd /Cytomine-python-client && git checkout tags/v2.5.1 && pip install . && \
-    rm -r /Cytomine-python-client
-# -----------------------------------------------------------------------------
 
 
 # --------------------------------------------------------------------------------------------
