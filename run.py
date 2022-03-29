@@ -17,22 +17,16 @@
 
 from __future__ import print_function, unicode_literals, absolute_import, division
 import sys
-import numpy as np
 import os
-from shapely.geometry import shape, box, Polygon,Point
+from shapely.geometry import Polygon,Point
 from shapely import wkt
 from glob import glob
 from tifffile import imread
 from csbdeep.utils import Path, normalize
-from stardist import random_label_cmap
 from stardist.models import StarDist2D
-from cytomine import cytomine, models, CytomineJob
-from cytomine.models import Annotation, AnnotationTerm, AnnotationCollection, ImageInstanceCollection, Job
+from cytomine import CytomineJob
+from cytomine.models import Annotation, AnnotationCollection, ImageInstanceCollection, Job
 from PIL import Image
-import argparse
-import json
-import logging
-
 
 __author__ = "Maree Raphael <raphael.maree@uliege.be>"
 
@@ -43,8 +37,6 @@ def main(argv):
         working_path = os.path.join(base_path,str(conn.job.id))
         
         #Loading pre-trained Stardist model
-        np.random.seed(17)
-        lbl_cmap = random_label_cmap()
         #Stardist H&E model downloaded from https://github.com/mpicbg-csbd/stardist/issues/46
         #Stardist H&E model downloaded from https://drive.switch.ch/index.php/s/LTYaIud7w6lCyuI
         model = StarDist2D(None, name='2D_versatile_HE', basedir='/models/')   #use local model file in ~/models/2D_versatile_HE/
@@ -79,8 +71,10 @@ def main(argv):
                 print("ROI Geometry from Shapely: {}".format(roi_geometry))
                 print("ROI Bounds")
                 print(roi_geometry.bounds)
-                minx=roi_geometry.bounds[0]
-                miny=roi_geometry.bounds[3]
+                min_x=roi_geometry.bounds[0]
+                min_y=roi_geometry.bounds[1]
+                max_x=roi_geometry.bounds[2]
+                max_y=roi_geometry.bounds[3]
                 #Dump ROI image into local PNG file
                 roi_path=os.path.join(working_path,str(roi_annotations.project)+'/'+str(roi_annotations.image)+'/'+str(roi.id))
                 roi_png_filename=os.path.join(roi_path+'/'+str(roi.id)+'.png')
@@ -118,7 +112,9 @@ def main(argv):
                         for i in range(len(polygroup[0])):
                             #Cytomine cartesian coordinate system, (0,0) is bottom left corner
                             #Mapping Stardist polygon detection coordinates to Cytomine ROI in whole slide image
-                            p = Point(minx+polygroup[1][i],miny-polygroup[0][i])
+                            x_ratio = (max_x-min_x)/im.size[0]
+                            y_ratio = (max_y-min_y)/im.size[1]
+                            p = Point(min_x+(polygroup[1][i]*x_ratio),max_y-(polygroup[0][i]*y_ratio))
                             points.append(p)
 
                         annotation = Polygon(points)
@@ -130,7 +126,7 @@ def main(argv):
                         print(".",end = '',flush=True)
 
                     #Send Annotation Collection (for this ROI) to Cytomine server in one http request
-                    ca = cytomine_annotations.save()
+                    cytomine_annotations.save()
 
         conn.job.update(status=Job.TERMINATED, progress=100, statusComment="Finished.")
                 
