@@ -105,10 +105,12 @@ def main(argv):
                 for x in range(0,len(X)):
                     print("------------------- Processing ROI file %d: %s" %(x,roi_tif_filename))
                     img = normalize(X[x], conn.parameters.stardist_norm_perc_low, conn.parameters.stardist_norm_perc_high, axis=axis_norm)
+                    n_tiles = model._guess_n_tiles(img)
                     #Stardist model prediction with thresholds
                     labels, details = model.predict_instances(img,
                                                               prob_thresh=conn.parameters.stardist_prob_t,
-                                                              nms_thresh=conn.parameters.stardist_nms_t)
+                                                              nms_thresh=conn.parameters.stardist_nms_t,
+                                                              n_tiles=n_tiles)
                     print("Number of detected polygons: %d" %len(details['coord']))
                     cytomine_annotations = AnnotationCollection()
                     #Go over detections in this ROI, convert and upload to Cytomine
