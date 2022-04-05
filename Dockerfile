@@ -2,8 +2,8 @@ FROM cytomine/software-python3-base:v2.2.0
 
 # -----------------------------------------------------------------------------
 # Install Stardist and tensorflow
-RUN pip install tensorflow==2.2.0
-RUN pip install stardist==0.6.0
+RUN pip install tensorflow==2.8.0
+RUN pip install stardist==0.8.0
 RUN mkdir -p /models && \
     cd /models && \
     mkdir -p 2D_versatile_HE
