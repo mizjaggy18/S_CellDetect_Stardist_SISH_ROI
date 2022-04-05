@@ -27,7 +27,7 @@ from csbdeep.utils import Path, normalize
 from stardist import random_label_cmap
 from stardist.models import StarDist2D
 from cytomine import cytomine, models, CytomineJob
-from cytomine.models import Annotation, AnnotationTerm, AnnotationCollection, ImageInstanceCollection, Job
+from cytomine.models import Annotation, AnnotationTerm, AnnotationCollection, ImageInstanceCollection, Job, User
 from PIL import Image
 import argparse
 import json
@@ -62,11 +62,13 @@ def main(argv):
         for id_image in conn.monitor(list_imgs, prefix="Running detection on image", period=0.1):
             #Dump ROI annotations in img from Cytomine server to local images
             #conn.job.update(status=Job.RUNNING, progress=0, statusComment="Fetching ROI annotations...")
-            roi_annotations = AnnotationCollection()
-            roi_annotations.project = conn.parameters.cytomine_id_project
-            roi_annotations.term = conn.parameters.cytomine_id_roi_term
-            roi_annotations.image = id_image #conn.parameters.cytomine_id_image
-            roi_annotations.showWKT = True
+            roi_annotations = AnnotationCollection(
+                terms=[conn.parameters.cytomine_id_roi_term],
+                project=conn.parameters.cytomine_id_project,
+                image=id_image, #conn.parameters.cytomine_id_image
+                showWKT = True,
+                includeAlgo=True, 
+            )
             roi_annotations.fetch()
             print(roi_annotations)
             #Go over ROI in this image
@@ -85,7 +87,8 @@ def main(argv):
                 roi_path=os.path.join(working_path,str(roi_annotations.project)+'/'+str(roi_annotations.image)+'/'+str(roi.id))
                 roi_png_filename=os.path.join(roi_path+'/'+str(roi.id)+'.png')
                 print("roi_png_filename: %s" %roi_png_filename)
-                roi.dump(dest_pattern=roi_png_filename,mask=True,alpha=True)
+                is_algo = User().fetch(roi.user).algo
+                roi.dump(dest_pattern=roi_png_filename,mask=True,alpha=not is_algo)
                 #roi.dump(dest_pattern=os.path.join(roi_path,"{id}.png"), mask=True, alpha=True)
             
                 #Stardist works with TIFF images without alpha channel, flattening PNG alpha mask to TIFF RGB
@@ -105,10 +108,12 @@ def main(argv):
                 for x in range(0,len(X)):
                     print("------------------- Processing ROI file %d: %s" %(x,roi_tif_filename))
                     img = normalize(X[x], conn.parameters.stardist_norm_perc_low, conn.parameters.stardist_norm_perc_high, axis=axis_norm)
+                    n_tiles = model._guess_n_tiles(img)
                     #Stardist model prediction with thresholds
                     labels, details = model.predict_instances(img,
                                                               prob_thresh=conn.parameters.stardist_prob_t,
-                                                              nms_thresh=conn.parameters.stardist_nms_t)
+                                                              nms_thresh=conn.parameters.stardist_nms_t,
+                                                              n_tiles=n_tiles)
                     print("Number of detected polygons: %d" %len(details['coord']))
                     cytomine_annotations = AnnotationCollection()
                     #Go over detections in this ROI, convert and upload to Cytomine
