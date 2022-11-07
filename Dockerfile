@@ -1,25 +1,29 @@
-FROM cytomine/software-python3-base:v2.2.0
+FROM python:3.8
 
-# -----------------------------------------------------------------------------
-# Install Stardist and tensorflow
-RUN pip install tensorflow==2.8.0
-RUN pip install stardist==0.8.0
-RUN mkdir -p /models && \
-    cd /models && \
-    mkdir -p 2D_versatile_HE
-ADD config.json /models/2D_versatile_HE/config.json
-ADD thresholds.json /models/2D_versatile_HE/thresholds.json
-ADD weights_best.h5 /models/2D_versatile_HE/weights_best.h5
+# install git
+RUN apt-get update -y && apt-get install git -y
+
+# Create the directories
+RUN mkdir -p app/ models/ models/2D_versatile_HE/
+
+# Install Cytomine python client
+RUN pip3 install git+https://github.com/cytomine/Cytomine-python-client.git@v2.3.2
+
+# Install Stardist and tensorflow and its dependencies
+COPY requirements.txt /tmp/
+RUN pip3 install -r /tmp/requirements.txt
+
+COPY config.json /models/2D_versatile_HE/config.json
+COPY thresholds.json /models/2D_versatile_HE/thresholds.json
+COPY weights_best.h5 /models/2D_versatile_HE/weights_best.h5
+
 RUN chmod 444 /models/2D_versatile_HE/config.json
 RUN chmod 444 /models/2D_versatile_HE/thresholds.json
 RUN chmod 444 /models/2D_versatile_HE/weights_best.h5
 
-
 # --------------------------------------------------------------------------------------------
 # Install scripts
-ADD descriptor.json /app/descriptor.json
-RUN mkdir -p /app
-ADD run.py /app/run.py
+COPY descriptor.json /app/descriptor.json
+COPY run.py /app/run.py
 
 ENTRYPOINT ["python3", "/app/run.py"]
-
