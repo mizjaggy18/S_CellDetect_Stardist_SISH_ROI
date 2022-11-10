@@ -1,4 +1,4 @@
-FROM python:3.8
+FROM python:3.8-slim-bullseye
 
 # install git
 RUN apt-get update -y && apt-get install git -y
