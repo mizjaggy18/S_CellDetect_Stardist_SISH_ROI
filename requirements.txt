@@ -49,6 +49,8 @@ scipy==1.8.0
 Shapely==1.8.1.post1
 six==1.16.0
 stardist==0.8.2
+sldc==1.4.1
+sldc-cytomine==2.1.0
 tensorboard==2.8.0
 tensorboard-data-server==0.6.1
 tensorboard-plugin-wit==1.8.1
