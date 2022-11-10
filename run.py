@@ -14,10 +14,8 @@
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
+import logging
+from tempfile import TemporaryDirectory
 
 import numpy as np
 import sys
@@ -27,24 +25,24 @@ from glob import glob
 from PIL import Image
 from shapely.geometry import Polygon, Point
 from shapely import wkt
+from shapely.affinity import affine_transform
 from tifffile import imread
 
 from csbdeep.utils import normalize
 from stardist.models import StarDist2D
 
 from cytomine import CytomineJob
-from cytomine.models import (
-    Annotation, AnnotationCollection, ImageInstanceCollection, Job
-)
+from cytomine.models import Annotation, AnnotationCollection, ImageInstanceCollection, Job
+from sldc_cytomine.dump import dump_region
 
 __author__ = "Maree Raphael <raphael.maree@uliege.be>"
 
 
 def main(argv):
     with CytomineJob.from_cli(argv) as conn:
+        app_logger = logging.getLogger("cytomine.app.stardist")
+        app_logger.setLevel(conn.logger.level)
         conn.job.update(status=Job.RUNNING, progress=0, statusComment="Initialization...")
-        base_path = os.getenv("HOME")  # Mandatory for Singularity
-        working_path = os.path.join(base_path, str(conn.job.id))
 
         # Loading pre-trained Stardist model
         np.random.seed(17)
@@ -66,100 +64,77 @@ def main(argv):
         # Go over images
         for id_image in conn.monitor(list_imgs, prefix="Running detection on image", period=0.1):
             # Dump ROI annotations in img from Cytomine server to local images
-            roi_annotations = AnnotationCollection(
-                project=conn.parameters.cytomine_id_project,
-                term=conn.parameters.cytomine_id_roi_term,
-                image=id_image,
-                showWKT=True,
-                includeAlgo=True
-            ).fetch()
-
-            print(roi_annotations)
+            annotation_params = {
+                "project": conn.parameters.cytomine_id_project,
+                "term": conn.parameters.cytomine_id_roi_term,
+                "image": id_image,
+                "showWKT": True
+            }
+            roi_user_annotations = AnnotationCollection(**annotation_params).fetch()
+            roi_algo_annotations = AnnotationCollection(**annotation_params, includeAlgo=True).fetch()
+            roi_annotations = roi_user_annotations + roi_algo_annotations
+            app_logger.debug(roi_annotations)
 
             # Go over ROI in this image
             for roi in roi_annotations:
                 # Get Cytomine ROI coordinates for remapping to whole-slide
                 # Cytomine cartesian coordinate system, (0,0) is bottom left corner
-                print("----------------------------ROI------------------------------")
+                app_logger.debug("----------------------------ROI------------------------------")
                 roi_geometry = wkt.loads(roi.location)
-                print(f"ROI Geometry from Shapely: {roi_geometry}")
-                print("ROI Bounds")
-                print(roi_geometry.bounds)
+                app_logger.debug(f"ROI Geometry from Shapely: {roi_geometry}")
+                app_logger.info(f"ROI {roi.id} bounds {roi_geometry.bounds}")
 
                 minx, miny = roi_geometry.bounds[0], roi_geometry.bounds[3]
 
-                # Dump ROI image into local PNG file
-                roi_path = os.path.join(
-                    working_path,
-                    str(roi_annotations.project),
-                    str(roi_annotations.image),
-                    str(roi.id)
-                )
-                roi_png_filename = os.path.join(roi_path, f'{roi.id}.png')
-                print(f"roi_png_filename: {roi_png_filename}")
-                roi.dump(dest_pattern=roi_png_filename, mask=True, alpha=True)
+                # Dump ROI image into local Tiff file, all downloaded files will be deleted after use  
+                with TemporaryDirectory() as tmpdir:
+                    roi_filepath = os.path.join(tmpdir, f'{roi.id}.tif')
+                    tiles_path = os.path.join(tmpdir, 'tiles')
+                    app_logger.debug(f"roi_png_filename: {roi_filepath}")
+                    dump_region(roi, roi_filepath, working_path=tiles_path)
 
-                # Stardist works with TIFF images without alpha channel, flattening PNG alpha mask to TIFF RGB
-                im = Image.open(roi_png_filename)
-                bg = Image.new("RGB", im.size, (255, 255, 255))
-                bg.paste(im, mask=im.split()[3])
-
-                roi_tif_filename = os.path.join(roi_path, f'{roi.id}.tif')
-                bg.save(roi_tif_filename, quality=100)
-
-                X_files = sorted(glob(os.path.join(roi_path, f'{roi.id}*.tif')))
-                X = list(map(imread, X_files))
-                n_channel = 3 if X[0].ndim == 3 else X[0].shape[-1]
-                axis_norm = (0, 1)  # normalize channels independently  (0,1,2) normalize channels jointly
-                if n_channel > 1:
-                    type = 'jointly' if axis_norm is None or 2 in axis_norm else 'independently'
-                    print(f"Normalizing image channels {type}.")
-
-                # Going over ROI images in ROI directory (in our case: one ROI per directory)
-                for x in range(0, len(X)):
-                    print(f"------------------- Processing ROI file {X}: {roi_tif_filename}")
+                    # Processing ROI
+                    app_logger.info(f"-- Processing ROI file : {roi_filepath}")
                     img = normalize(
-                        X[x],
+                        imread(roi_filepath),
                         conn.parameters.stardist_norm_perc_low,
                         conn.parameters.stardist_norm_perc_high,
-                        axis=axis_norm
+                        axis=(0, 1)  # normalize channels independently
                     )
                     # Stardist model prediction with thresholds
-                    labels, details = model.predict_instances(
+                    _, details = model.predict_instances(
                         img,
                         prob_thresh=conn.parameters.stardist_prob_t,
                         nms_thresh=conn.parameters.stardist_nms_t,
                         n_tiles=model._guess_n_tiles(img)
                     )
+                
+                app_logger.info(f"Number of detected polygons: {len(details['coord'])}")
 
-                    print("Number of detected polygons: %d" % len(details['coord']))
+                cytomine_annotations = AnnotationCollection()
+                # Go over detections in this ROI, convert and upload to Cytomine
+                for polygroup in details['coord']:
+                    # Converting to Shapely annotation
+                    annotation = Polygon(np.vstack(polygroup[::-1]).transpose())
+                    # Cytomine cartesian coordinate system, (0,0) is bottom left corner
+                    # Mapping Stardist polygon detection coordinates to Cytomine ROI in whole slide image
+                    affine_matrix = [1, 0, 0, -1, minx, miny]
+                    annotation = affine_transform(annotation, affine_matrix)
+                    if not roi_geometry.intersects(annotation): 
+                        continue
 
-                    cytomine_annotations = AnnotationCollection()
-                    # Go over detections in this ROI, convert and upload to Cytomine
-                    for polygroup in details['coord']:
-                        # Converting to Shapely annotation
-                        points = list()
-                        for i in range(len(polygroup[0])):
-                            # Cytomine cartesian coordinate system, (0,0) is bottom left corner
-                            # Mapping Stardist polygon detection coordinates to Cytomine ROI in whole slide image
-                            p = Point(minx + polygroup[1][i], miny - polygroup[0][i])
-                            points.append(p)
-
-                        annotation = Polygon(points)
-                        # Append to Annotation collection
-                        cytomine_annotations.append(
-                            Annotation(
-                                location=annotation.wkt,
-                                id_image=id_image,  # conn.parameters.cytomine_id_image,
-                                id_project=conn.parameters.cytomine_id_project,
-                                id_terms=[conn.parameters.cytomine_id_cell_term]
-                            )
+                    cytomine_annotations.append(
+                        Annotation(
+                            location=annotation.wkt,
+                            id_image=id_image,  # conn.parameters.cytomine_id_image,
+                            id_project=conn.parameters.cytomine_id_project,
+                            id_terms=[conn.parameters.cytomine_id_cell_term]
                         )
-                        print(".", end='', flush=True)
-                    print()
-
-                    # Send Annotation Collection (for this ROI) to Cytomine server in one http request
-                    cytomine_annotations.save()
+                    )
+                
+                app_logger.info("upload annotation")
+                # Send Annotation Collection (for this ROI) to Cytomine server in batch
+                cytomine_annotations.save(chunk=50)
 
         conn.job.update(status=Job.TERMINATED, progress=100, statusComment="Finished.")
 
