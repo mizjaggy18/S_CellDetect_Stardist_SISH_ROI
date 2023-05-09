@@ -1,7 +1,7 @@
 {
-    "name": "CellDetect_Stardist_HE_ROI",
+    "name": "CellDetect_Stardist_SISH_ROI",
     "container-image": {
-        "image": "cytomine/s_celldetect_stardist_he_roi",
+        "image": "mizjaggy18/s_celldetect_stardist_sish_roi",
         "type": "singularity"
     },
     "schema-version": "cytomine-0.1",
