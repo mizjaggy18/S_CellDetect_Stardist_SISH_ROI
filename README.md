@@ -1,3 +1,5 @@
+9th May 2023: Modified by Zaka Ur Rehman (Multimedia University Cyberjaya) to use with HER2-SISH stain.
+
 # S_CellDetect_Stardist_ROI
 
 Cytomine (https://cytomine.org) app developed by ULiège Cytomine Research team (https://uliege.cytomine.org) for Cell/Nuclei detection in region of interests (ROIs),
