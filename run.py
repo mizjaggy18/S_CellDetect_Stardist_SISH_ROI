@@ -95,15 +95,12 @@ def main(argv):
 
                     # Processing ROI
                     app_logger.info(f"-- Processing ROI file : {roi_filepath}")
-                    img = normalize(
-                        imread(roi_filepath),
-                        conn.parameters.stardist_norm_perc_low,
-                        conn.parameters.stardist_norm_perc_high,
-                        axis=(0, 1)  # normalize channels independently
-                    )
+                    img = imread(roi_filepath)
+                    img = img[:,:,0]
+                    
                     # Stardist model prediction with thresholds
                     _, details = model.predict_instances(
-                        img,
+                        img, verbose=True,
                         prob_thresh=conn.parameters.stardist_prob_t,
                         nms_thresh=conn.parameters.stardist_nms_t,
                         n_tiles=model._guess_n_tiles(img)
