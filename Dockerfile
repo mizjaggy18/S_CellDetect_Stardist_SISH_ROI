@@ -4,7 +4,7 @@ FROM python:3.8-slim-bullseye
 RUN apt-get update -y && apt-get install git -y
 
 # Create the directories
-RUN mkdir -p app/ models/ models/2D_versatile_fluo/
+RUN mkdir -p app/ models/ models/2D_versatile_fluo-mod/
 
 # Install Cytomine python client
 RUN pip3 install git+https://github.com/cytomine/Cytomine-python-client.git@v2.3.3
@@ -13,15 +13,15 @@ RUN pip3 install git+https://github.com/cytomine/Cytomine-python-client.git@v2.3
 COPY requirements.txt /tmp/
 RUN pip3 install -r /tmp/requirements.txt
 
-COPY config.json /models/2D_versatile_fluo/config.json
-COPY thresholds.json /models/2D_versatile_fluo/thresholds.json
-COPY weights_best.h5 /models/2D_versatile_fluo/weights_best.h5
-COPY weights_last.h5 /models/2D_versatile_fluo/weights_last.h5
+COPY config.json /models/2D_versatile_fluo-mod/config.json
+COPY thresholds.json /models/2D_versatile_fluo-mod/thresholds.json
+COPY weights_best.h5 /models/2D_versatile_fluo-mod/weights_best.h5
+COPY weights_last.h5 /models/2D_versatile_fluo-mod/weights_last.h5
 
-RUN chmod 444 /models/2D_versatile_fluo/config.json
-RUN chmod 444 /models/2D_versatile_fluo/thresholds.json
-RUN chmod 444 /models/2D_versatile_fluo/weights_best.h5
-RUN chmod 444 /models/2D_versatile_fluo/weights_last.h5
+RUN chmod 444 /models/2D_versatile_fluo-mod/config.json
+RUN chmod 444 /models/2D_versatile_fluo-mod/thresholds.json
+RUN chmod 444 /models/2D_versatile_fluo-mod/weights_best.h5
+RUN chmod 444 /models/2D_versatile_fluo-mod/weights_last.h5
 
 # --------------------------------------------------------------------------------------------
 # Install scripts
