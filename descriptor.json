@@ -115,28 +115,6 @@
 	    "set-by-server": false,
 	    "optional": true,
 	    "type": "Number"
-	},
-	{
-	    "id": "stardist_norm_perc_low",
-	    "value-key": "@ID",
-	    "command-line-flag": "--@id",
-	    "name": "Stardist Image Normalization Percentile Low",
-	    "description": "Percentile low in range [0.0 100.0]",
-	    "default-value": 1,
-	    "set-by-server": false,
-	    "optional": true,
-	    "type": "Number"
-	},
-	{
-	    "id": "stardist_norm_perc_high",
-	    "value-key": "@ID",
-	    "command-line-flag": "--@id",
-	    "name": "Stardist Image Normalization Percentile High",
-	    "description": "Percentile high in range [0.0 100.0]",
-	    "default-value": 99.8,
-	    "set-by-server": false,
-	    "optional": true,
-	    "type": "Number"
 	}
     ]
 }
