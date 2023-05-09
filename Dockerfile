@@ -7,7 +7,7 @@ RUN apt-get update -y && apt-get install git -y
 RUN mkdir -p app/ models/ models/2D_versatile_fluo/
 
 # Install Cytomine python client
-RUN pip3 install git+https://github.com/cytomine/Cytomine-python-client.git@v2.3.2
+RUN pip3 install git+https://github.com/cytomine/Cytomine-python-client.git@v2.3.3
 
 # Install Stardist and tensorflow and its dependencies
 COPY requirements.txt /tmp/
