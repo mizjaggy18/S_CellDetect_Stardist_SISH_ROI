@@ -101,8 +101,6 @@ def main(argv):
                     # Stardist model prediction with thresholds
                     _, details = model.predict_instances(
                         img, verbose=True,
-                        prob_thresh=conn.parameters.stardist_prob_t,
-                        nms_thresh=conn.parameters.stardist_nms_t,
                         n_tiles=model._guess_n_tiles(img)
                     )
                 
