@@ -12,7 +12,7 @@ RUN pip3 install git+https://github.com/cytomine/Cytomine-python-client.git@v2.3
 # Install Stardist and tensorflow and its dependencies
 COPY requirements.txt /tmp/
 RUN pip3 install -r /tmp/requirements.txt
-RUN pip3 imstall chardet -y
+RUN pip3 install chardet -y
 RUN pip3 install --upgrade tensorflow
 
 COPY config.json /models/2D_versatile_fluo-mod/config.json
