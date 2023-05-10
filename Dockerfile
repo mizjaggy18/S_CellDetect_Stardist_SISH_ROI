@@ -10,8 +10,9 @@ RUN mkdir -p app/ models/ models/2D_versatile_fluo-mod/
 RUN pip3 install git+https://github.com/cytomine/Cytomine-python-client.git@v2.3.3
 
 # Install Stardist and tensorflow and its dependencies
-COPY requirements.txt /tmp/
-RUN pip3 install -r /tmp/requirements.txt
+# COPY requirements.txt /tmp/
+# RUN pip3 install -r /tmp/requirements.txt
+RUN pip3 install --upgrade tensorflow
 
 COPY config.json /models/2D_versatile_fluo-mod/config.json
 COPY thresholds.json /models/2D_versatile_fluo-mod/thresholds.json
