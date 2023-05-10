@@ -15,6 +15,7 @@ RUN pip3 install -r /tmp/requirements.txt
 RUN pip3 install chardet
 RUN pip3 install --upgrade tensorflow
 RUN pip3 install --upgrade charset-normalizer
+RUN pip3 install --upgrade stardist
 
 COPY config.json /models/2D_versatile_fluo-mod/config.json
 COPY thresholds.json /models/2D_versatile_fluo-mod/thresholds.json
