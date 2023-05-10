@@ -1,4 +1,4 @@
-FROM python:3.8-slim-bullseye
+FROM python:3.9.5
 
 # install git
 RUN apt-get update -y && apt-get install git -y
@@ -12,10 +12,10 @@ RUN pip3 install git+https://github.com/cytomine/Cytomine-python-client.git@v2.3
 # Install Stardist and tensorflow and its dependencies
 COPY requirements.txt /tmp/
 RUN pip3 install -r /tmp/requirements.txt
-RUN pip3 install chardet
-RUN pip3 install --upgrade tensorflow
-RUN pip3 install --upgrade charset-normalizer
-RUN pip3 install --upgrade stardist
+# RUN pip3 install chardet
+# RUN pip3 install --upgrade tensorflow
+# RUN pip3 install --upgrade charset-normalizer
+# RUN pip3 install --upgrade stardist
 
 COPY config.json /models/2D_versatile_fluo-mod/config.json
 COPY thresholds.json /models/2D_versatile_fluo-mod/thresholds.json
