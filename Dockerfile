@@ -10,10 +10,11 @@ RUN mkdir -p app/ models/ models/2D_versatile_fluo-mod/
 RUN pip3 install git+https://github.com/cytomine/Cytomine-python-client.git@v2.3.3
 
 # Install Stardist and tensorflow and its dependencies
-COPY requirements.txt /tmp/
-RUN pip3 install -r /tmp/requirements.txt
-# RUN pip3 install chardet
-# RUN pip3 install --upgrade tensorflow
+# COPY requirements.txt /tmp/
+# RUN pip3 install -r /tmp/requirements.txt
+RUN pip3 install stardist==0.8.2
+RUN pip3 install sldc_cytomine
+RUN pip3 install tensorflow
 # RUN pip3 install --upgrade charset-normalizer
 # RUN pip3 install --upgrade stardist
 
