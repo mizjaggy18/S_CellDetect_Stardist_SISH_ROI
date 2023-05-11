@@ -19,8 +19,3 @@ This version use tensorflow CPU version (See Dockerfile) to ensure compatibility
 
 Stardist H&E model downloaded from the link https://drive.switch.ch/index.php/s/LTYaIud7w6lCyuI given in https://github.com/mpicbg-csbd/stardist/issues/46.
 
-# Example of StarDist detections in Cytomine web viewer of a whole-slide image
-
-![](screenshot-launch.jpg)
-![](screenshot.jpg)
-![](screenshot-detections.jpg)
