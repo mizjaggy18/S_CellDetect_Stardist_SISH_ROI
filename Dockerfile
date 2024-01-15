@@ -9,9 +9,9 @@ RUN pip3 install git+https://github.com/cytomine/Cytomine-python-client.git@v2.3
 # Install Stardist and tensorflow and its dependencies
 # COPY requirements.txt /tmp/
 # RUN pip3 install -r /tmp/requirements.txt
-RUN pip3 install stardist==0.8.2
+# RUN pip3 install stardist==0.8.2
 RUN pip3 install sldc_cytomine
-RUN pip3 install tensorflow-gpu==2.8.0
+# RUN pip3 install tensorflow-gpu==2.8.0
 # RUN pip3 install --upgrade charset-normalizer
 # RUN pip3 install --upgrade stardist
 
@@ -27,9 +27,10 @@ RUN pip3 install tensorflow-gpu==2.8.0
 
 # FROM cytomine/software-python3-base:v2.2.0
 # # Install Stardist and tensorflow
-# RUN pip3 install tensorflow-gpu==2.8.0
-# RUN pip3 install stardist==0.8.0
-# RUN pip3 install protobuf==3.20.*
+RUN pip3 install tensorflow-gpu==2.8.0
+RUN pip3 install stardist==0.8.0
+RUN pip3 install protobuf==3.20.*
+
 
 # #INSTALL
 # RUN pip3 install numpy==1.22.*
